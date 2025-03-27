@@ -69,4 +69,26 @@ jobs:
       - name: read time sync
         run: |
           read_time
-      
+      jobs:
+  sync:
+    steps:
+      # 原有步骤保持不变，例如生成阅读热力图
+      - name: weread heatmap
+        run: |
+          github_heatmap weread --year $YEAR --me "${{secrets.NAME}}" --without-type-name --background-color=${{ vars.background_color || '#FFFFFF' }} --track-color=${{ vars.track_color || '#ACE7AE' }} --special-color1=${{ vars.special_color || '#69C16E' }} --special-color2=${{ vars.special_color2 || '#549F57' }} --dom-color=${{ vars.dom_color || '#EBEDF0' }} --text-color=${{ vars.text_color || '#000000' }}
+
+      # 其他原有步骤...
+
+      # 新增步骤：失败时触发 Cookies 刷新
+      - name: Trigger Cookie Refresh on Failure
+        if: failure()
+        run: |
+          curl -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.PAT_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/hahapkpk/cookie-refresh-demo/actions/workflows/refresh.yml/dispatches \
+            -d '{"ref":"main"}'
+        env:
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
